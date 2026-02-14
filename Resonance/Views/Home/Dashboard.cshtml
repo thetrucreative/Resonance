@@ -1,0 +1,204 @@
+@{
+    ViewData["Title"] = "Analytics Dashboard";
+}
+
+<section id="dash-header">
+    <h2>📊 Call Emotion Analytics</h2>
+    <p class="dash-subtitle">Real-time emotion tracking for B2B / B2C call quality analysis</p>
+    <div class="dash-controls">
+        <button id="btnRefresh" onclick="loadEvents()">↻ Refresh</button>
+        <button id="btnExport" onclick="exportCSV()">⬇ Export CSV</button>
+        <span id="eventCount" class="dash-stat">0 events</span>
+    </div>
+</section>
+
+<section id="dash-summary">
+    <h2>Session Summary</h2>
+    <div class="summary-cards">
+        <div class="card">
+            <span class="card-label">Total Turns</span>
+            <span class="card-value" id="sumTurns">0</span>
+        </div>
+        <div class="card">
+            <span class="card-label">Avg Confusion</span>
+            <span class="card-value" id="sumConfusion">0.00</span>
+        </div>
+        <div class="card">
+            <span class="card-label">Avg Doubt</span>
+            <span class="card-value" id="sumDoubt">0.00</span>
+        </div>
+        <div class="card">
+            <span class="card-label">Avg Frustration</span>
+            <span class="card-value" id="sumFrustration">0.00</span>
+        </div>
+        <div class="card card-highlight">
+            <span class="card-label">Strategy Pivots</span>
+            <span class="card-value" id="sumPivots">0</span>
+        </div>
+    </div>
+</section>
+
+<section id="dash-timeline">
+    <h2>Emotion Timeline</h2>
+    <div class="timeline-chart" id="timelineChart">
+        <p class="empty-state">Connect to a call on the <a href="/">Live Agent</a> page, then return here.</p>
+    </div>
+</section>
+
+<section id="dash-top-emotions">
+    <h2>Dominant Emotions Across Session</h2>
+    <div class="emotion-bars" id="emotionBars">
+        <p class="empty-state">No data yet.</p>
+    </div>
+</section>
+
+<section id="dash-transcript">
+    <h2>Transcript &amp; Emotion Log</h2>
+    <div class="transcript-table-wrap">
+        <table class="transcript-table" id="transcriptTable">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Transcript</th>
+                    <th>Top Emotion</th>
+                    <th>Confusion</th>
+                    <th>Doubt</th>
+                    <th>Frustration</th>
+                    <th>Strategy</th>
+                </tr>
+            </thead>
+            <tbody id="transcriptBody"></tbody>
+        </table>
+    </div>
+</section>
+
+<section id="dash-pivots">
+    <h2>Self-Correction Log</h2>
+    <p class="dash-subtitle">Every time the agent adapted its behavior based on detected emotions</p>
+    <div id="pivotLog" class="pivot-log">
+        <p class="empty-state">No strategy pivots recorded yet.</p>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+    let events = [];
+
+    function loadEvents() {
+        try {
+            const raw = sessionStorage.getItem("resonance_events");
+            events = raw ? JSON.parse(raw) : [];
+        } catch { events = []; }
+
+        document.getElementById("eventCount").textContent = `${events.length} events`;
+        renderSummary();
+        renderTimeline();
+        renderTopEmotions();
+        renderTranscript();
+        renderPivots();
+    }
+
+    function renderSummary() {
+        const n = events.length;
+        document.getElementById("sumTurns").textContent = n;
+        if (n === 0) return;
+        const avg = (key) => events.reduce((s, e) => s + (e.metrics?.[key] ?? 0), 0) / n;
+        document.getElementById("sumConfusion").textContent = (avg("confusion") * 100).toFixed(1) + "%";
+        document.getElementById("sumDoubt").textContent = (avg("doubt") * 100).toFixed(1) + "%";
+        document.getElementById("sumFrustration").textContent = (avg("frustration") * 100).toFixed(1) + "%";
+        document.getElementById("sumPivots").textContent = events.filter(e => e.strategy !== "Baseline").length;
+    }
+
+    function renderTimeline() {
+        const container = document.getElementById("timelineChart");
+        if (events.length === 0) { container.innerHTML = '<p class="empty-state">No data yet.</p>'; return; }
+        let html = '<div class="tl-header"><span>Turn</span><span>Confusion</span><span>Doubt</span><span>Frustration</span></div>';
+        events.forEach((e, i) => {
+            const c = ((e.metrics?.confusion ?? 0) * 100).toFixed(0);
+            const d = ((e.metrics?.doubt ?? 0) * 100).toFixed(0);
+            const f = ((e.metrics?.frustration ?? 0) * 100).toFixed(0);
+            const pivotClass = e.strategy !== "Baseline" ? " tl-pivot" : "";
+            html += `<div class="tl-row${pivotClass}">
+                <span class="tl-turn">#${i + 1}</span>
+                <div class="tl-bar"><div class="tl-fill tl-c" style="width:${c}%"></div></div>
+                <div class="tl-bar"><div class="tl-fill tl-d" style="width:${d}%"></div></div>
+                <div class="tl-bar"><div class="tl-fill tl-f" style="width:${f}%"></div></div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderTopEmotions() {
+        const container = document.getElementById("emotionBars");
+        if (events.length === 0) { container.innerHTML = '<p class="empty-state">No data yet.</p>'; return; }
+        const totals = {};
+        events.forEach(e => {
+            if (!e.allEmotions) return;
+            for (const [name, score] of Object.entries(e.allEmotions)) {
+                totals[name] = (totals[name] || 0) + score;
+            }
+        });
+        const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const max = sorted[0]?.[1] || 1;
+        let html = '';
+        sorted.forEach(([name, total]) => {
+            const pct = (total / max * 100).toFixed(0);
+            const avgPct = (total / events.length * 100).toFixed(1);
+            html += `<div class="ebar"><span class="ebar-name">${name}</span><div class="ebar-track"><div class="ebar-fill" style="width:${pct}%"></div></div><span class="ebar-val">${avgPct}%</span></div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderTranscript() {
+        const tbody = document.getElementById("transcriptBody");
+        if (events.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No data yet.</td></tr>'; return; }
+        let html = '';
+        events.forEach(e => {
+            const time = new Date(e.ts).toLocaleTimeString();
+            const topEmo = e.top5?.[0]?.name ?? "—";
+            const c = ((e.metrics?.confusion ?? 0) * 100).toFixed(1) + "%";
+            const d = ((e.metrics?.doubt ?? 0) * 100).toFixed(1) + "%";
+            const f = ((e.metrics?.frustration ?? 0) * 100).toFixed(1) + "%";
+            const strat = e.strategy || "Baseline";
+            const cls = strat !== "Baseline" ? ' class="pivot-row"' : '';
+            html += `<tr${cls}><td>${time}</td><td>${e.transcript || "—"}</td><td>${topEmo}</td><td>${c}</td><td>${d}</td><td>${f}</td><td><span class="strat-badge strat-${strat.toLowerCase()}">${strat}</span></td></tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function renderPivots() {
+        const container = document.getElementById("pivotLog");
+        const pivots = events.filter(e => e.strategy !== "Baseline");
+        if (pivots.length === 0) { container.innerHTML = '<p class="empty-state">No strategy pivots recorded yet.</p>'; return; }
+        let html = '';
+        pivots.forEach(e => {
+            const time = new Date(e.ts).toLocaleTimeString();
+            html += `<div class="pivot-entry">
+                <span class="pivot-time">${time}</span>
+                <span class="strat-badge strat-${e.strategy.toLowerCase()}">${e.strategy}</span>
+                <span class="pivot-transcript">"${e.transcript || "—"}"</span>
+                <span class="pivot-scores">C=${((e.metrics?.confusion ?? 0) * 100).toFixed(1)}% D=${((e.metrics?.doubt ?? 0) * 100).toFixed(1)}% F=${((e.metrics?.frustration ?? 0) * 100).toFixed(1)}%</span>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function exportCSV() {
+        if (events.length === 0) { alert("No data to export."); return; }
+        const header = "Timestamp,Transcript,TopEmotion,Confusion%,Doubt%,Frustration%,Strategy\n";
+        const rows = events.map(e => {
+            const top = e.top5?.[0]?.name ?? "";
+            return `"${e.ts}","${(e.transcript || "").replace(/"/g, '""')}","${top}",${((e.metrics?.confusion ?? 0) * 100).toFixed(1)},${((e.metrics?.doubt ?? 0) * 100).toFixed(1)},${((e.metrics?.frustration ?? 0) * 100).toFixed(1)},"${e.strategy}"`;
+        }).join("\n");
+        const blob = new Blob([header + rows], { type: "text/csv" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `resonance_session_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+    }
+
+    // Auto-refresh every 3 seconds if the page is visible
+    loadEvents();
+    setInterval(() => { if (!document.hidden) loadEvents(); }, 3000);
+</script>
+}

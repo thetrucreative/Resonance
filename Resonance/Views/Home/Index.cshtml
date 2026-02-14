@@ -1,0 +1,72 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<section id="controls">
+    <div class="api-key-group">
+        <label for="apiKey">Hume API Key</label>
+        <input type="password" id="apiKey" placeholder="Enter your Hume API key" />
+    </div>
+    <div class="config-group">
+        <label for="configId">Config ID <span class="optional">(optional)</span></label>
+        <input type="text" id="configId" placeholder="EVI config ID" />
+    </div>
+    <button id="btnConnect">Connect</button>
+    <button id="btnDisconnect" disabled>Disconnect</button>
+</section>
+
+<section id="status-panel">
+    <h2>Connection</h2>
+    <div id="connectionStatus" class="status disconnected">Disconnected</div>
+</section>
+
+<section id="mic-panel">
+    <h2>Microphone Activity</h2>
+    <div class="mic-activity">
+        <div class="meter">
+            <span class="label">Mic Level</span>
+            <div class="bar-track"><div class="bar-fill mic-level" id="micLevelBar"></div></div>
+            <span class="value" id="micLevelVal">0.0000</span>
+        </div>
+        <div class="mic-stats">
+            <span>Frames sent: <strong id="framesSent">0</strong></span>
+            <span id="speechIndicator" class="speech-indicator silent">Silent</span>
+        </div>
+    </div>
+</section>
+
+<section id="emotion-panel">
+    <h2>Live Emotion Scores</h2>
+    <div class="meters">
+        <div class="meter">
+            <span class="label">Confusion</span>
+            <div class="bar-track"><div class="bar-fill" id="barConfusion"></div></div>
+            <span class="value" id="valConfusion">0.00</span>
+        </div>
+        <div class="meter">
+            <span class="label">Doubt</span>
+            <div class="bar-track"><div class="bar-fill" id="barDoubt"></div></div>
+            <span class="value" id="valDoubt">0.00</span>
+        </div>
+        <div class="meter">
+            <span class="label">Frustration</span>
+            <div class="bar-track"><div class="bar-fill" id="barFrustration"></div></div>
+            <span class="value" id="valFrustration">0.00</span>
+        </div>
+    </div>
+</section>
+
+<section id="strategy-panel">
+    <h2>Active Strategy</h2>
+    <div id="activeStrategy" class="strategy-badge">Baseline</div>
+    <pre id="activePrompt" class="prompt-display">No adaptation yet.</pre>
+</section>
+
+<section id="log-panel">
+    <h2>Event Log</h2>
+    <div id="eventLog" class="log-area"></div>
+</section>
+
+@section Scripts {
+    <script src="~/js/site.js"></script>
+}
