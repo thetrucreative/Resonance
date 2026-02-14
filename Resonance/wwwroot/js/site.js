@@ -43,6 +43,27 @@ let reconnectAttempts = 0;  // Limit auto-reconnect loops
 let manualDisconnect = false;
 let dashboardEvents = [];   // Collected emotion events for the analytics dashboard
 
+// ── Google Meet integration state ──────────────────────────────────
+let mixDestination = null;  // MediaStreamDestination for mixed mic+Meet audio
+let meetStream = null;      // getDisplayMedia stream (Meet tab audio)
+let meetSource = null;      // MediaStreamSourceNode for Meet audio
+let meetAnalyser = null;    // AnalyserNode for Meet audio levels
+let meetLevelMonitorId = null;
+let meetActive = false;
+let lastMicRms = 0;         // Latest mic RMS for speaker comparison
+let lastMeetRms = 0;        // Latest Meet RMS for speaker comparison
+let activeSpeaker = "local"; // "local" | "remote"
+
+// ── Multi-speaker profiling ────────────────────────────────────────
+// Tracks individual remote speakers by their average volume profile.
+// A silence gap ≥1.5 s followed by speech at a different level = new speaker.
+let remoteSpeakers = [];       // [{id, label, avgRms, turnCount, firstSeen}]
+let currentRemoteSpeakerId = null;
+let remoteSpeechActive = false;
+let remoteSilenceStart = 0;    // timestamp (ms) when remote went silent
+let segmentRmsAccum = 0;       // running RMS accumulator for current segment
+let segmentRmsSamples = 0;     // sample count for current segment
+
 // ── Helpers ────────────────────────────────────────────────────────
 function log(msg) {
     const ts = new Date().toLocaleTimeString();
@@ -124,6 +145,10 @@ async function startMicrophone() {
     analyserNode.connect(silentGain);
     silentGain.connect(audioContext.destination);
 
+    // ── Mix destination (mic now, + Meet later if captured) ──
+    mixDestination = audioContext.createMediaStreamDestination();
+    source.connect(mixDestination);
+
     const analyserBuffer = new Float32Array(analyserNode.fftSize);
     function monitorLevels() {
         if (!analyserNode) return;
@@ -131,6 +156,7 @@ async function startMicrophone() {
         let sum = 0;
         for (let i = 0; i < analyserBuffer.length; i++) sum += analyserBuffer[i] * analyserBuffer[i];
         const rms = Math.sqrt(sum / analyserBuffer.length);
+        lastMicRms = rms;
         const levelPct = Math.min(rms * 400, 100);
 
         const micBar = document.getElementById("micLevelBar");
@@ -155,11 +181,12 @@ async function startMicrophone() {
     monitorLevels();
 
     // ── Audio capture & streaming via MediaRecorder ──
+    // Records from mixDestination so Meet audio is automatically included when captured.
     const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
         : "audio/webm";
 
-    mediaRecorder = new MediaRecorder(micStream, { mimeType });
+    mediaRecorder = new MediaRecorder(mixDestination.stream, { mimeType });
 
     let chunkCount = 0;
     mediaRecorder.ondataavailable = async (event) => {
@@ -198,6 +225,8 @@ async function startMicrophone() {
 
 function stopMicrophone() {
     console.log("[Resonance] Stopping microphone…");
+    // Stop Meet capture first if active
+    if (meetActive) stopMeetCapture();
     if (levelMonitorId) {
         cancelAnimationFrame(levelMonitorId);
         levelMonitorId = null;
@@ -206,6 +235,7 @@ function stopMicrophone() {
         mediaRecorder.stop();
     }
     mediaRecorder = null;
+    mixDestination = null;
     if (analyserNode) {
         analyserNode.disconnect();
         analyserNode = null;
@@ -226,6 +256,9 @@ function stopMicrophone() {
     isPlaying = false;
     framesSent = 0;
     speechActive = false;
+    lastMicRms = 0;
+    lastMeetRms = 0;
+    activeSpeaker = "local";
     console.log("[Resonance] Microphone stopped.");
 }
 
@@ -347,6 +380,199 @@ async function ensureConfig(apiKey) {
     return data.configId;
 }
 
+// ── Google Meet audio capture ──────────────────────────────────────
+// Uses getDisplayMedia() to capture tab audio from a Google Meet call.
+// The captured audio is mixed into the existing pipeline via mixDestination
+// so Hume EVI receives both local mic and remote Meet audio.
+async function startMeetCapture() {
+    if (!audioContext || !mixDestination) {
+        alert("Connect to Hume first, then capture Meet audio.");
+        return;
+    }
+    try {
+        meetStream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: true
+        });
+    } catch (err) {
+        console.warn("[Resonance] Meet capture cancelled:", err.message);
+        log(`⚠ Meet capture cancelled: ${err.message}`);
+        return;
+    }
+
+    // We only need the audio track
+    meetStream.getVideoTracks().forEach(t => t.stop());
+    const audioTracks = meetStream.getAudioTracks();
+    if (audioTracks.length === 0) {
+        log('⚠ No audio captured. Check "Share tab audio" when selecting the tab.');
+        meetStream = null;
+        return;
+    }
+
+    meetActive = true;
+
+    // Create source + analyser for Meet audio levels
+    meetSource = audioContext.createMediaStreamSource(meetStream);
+    meetAnalyser = audioContext.createAnalyser();
+    meetAnalyser.fftSize = 2048;
+    meetSource.connect(meetAnalyser);
+
+    // Mix Meet audio into the recording stream
+    meetSource.connect(mixDestination);
+
+    // Monitor Meet audio levels + multi-speaker identification
+    const meetBuffer = new Float32Array(meetAnalyser.fftSize);
+    function monitorMeetLevels() {
+        if (!meetAnalyser) return;
+        meetAnalyser.getFloatTimeDomainData(meetBuffer);
+        let sum = 0;
+        for (let i = 0; i < meetBuffer.length; i++) sum += meetBuffer[i] * meetBuffer[i];
+        const meetRms = Math.sqrt(sum / meetBuffer.length);
+        lastMeetRms = meetRms;
+        const levelPct = Math.min(meetRms * 400, 100);
+
+        const meetBar = document.getElementById("meetLevelBar");
+        const meetVal = document.getElementById("meetLevelVal");
+        if (meetBar) meetBar.style.width = `${levelPct}%`;
+        if (meetVal) meetVal.textContent = meetRms.toFixed(4);
+
+        // ── local vs. remote detection ──
+        const thresh = 0.008;
+        const micUp = lastMicRms > thresh;
+        const meetUp = meetRms > thresh;
+        let newSpeaker = activeSpeaker;
+        if (micUp && meetUp) newSpeaker = lastMicRms > meetRms ? "local" : "remote";
+        else if (micUp) newSpeaker = "local";
+        else if (meetUp) newSpeaker = "remote";
+
+        // ── Multi-speaker profiling for remote audio ──
+        if (meetUp) {
+            if (!remoteSpeechActive) {
+                // Speech just started after silence
+                remoteSpeechActive = true;
+                const silenceMs = remoteSilenceStart ? (performance.now() - remoteSilenceStart) : 9999;
+                if (silenceMs > 1500 || currentRemoteSpeakerId === null) {
+                    // Long-enough gap → reset segment accumulator for profiling
+                    segmentRmsAccum = 0;
+                    segmentRmsSamples = 0;
+                }
+            }
+            segmentRmsAccum += meetRms;
+            segmentRmsSamples++;
+            // After ~0.4 s of speech, try to identify / create the remote speaker
+            if (segmentRmsSamples === 25) {
+                identifyRemoteSpeaker(segmentRmsAccum / segmentRmsSamples);
+            }
+        } else {
+            if (remoteSpeechActive) {
+                remoteSpeechActive = false;
+                remoteSilenceStart = performance.now();
+            }
+        }
+
+        // ── Update active-speaker indicator ──
+        if (newSpeaker !== activeSpeaker) {
+            activeSpeaker = newSpeaker;
+            const el = document.getElementById("activeSpeakerIndicator");
+            if (el) {
+                const label = activeSpeaker === "local"
+                    ? "\uD83C\uDFA4 Agent"
+                    : currentRemoteSpeakerId
+                        ? `\uD83D\uDDA5\uFE0F ${remoteSpeakers.find(s => s.id === currentRemoteSpeakerId)?.label ?? "Customer"}`
+                        : "\uD83D\uDDA5\uFE0F Customer";
+                el.textContent = label;
+                el.className = `speaker-indicator ${activeSpeaker}`;
+            }
+        }
+        meetLevelMonitorId = requestAnimationFrame(monitorMeetLevels);
+    }
+    monitorMeetLevels();
+
+    // Handle user stopping the tab share
+    audioTracks[0].onended = () => stopMeetCapture();
+
+    console.log("[Resonance] Meet audio capture started.");
+    log("\uD83D\uDDA5\uFE0F Google Meet audio captured! Remote speakers are now analyzed.");
+
+    // Update UI
+    const meetStatus = document.getElementById("meetStatus");
+    if (meetStatus) { meetStatus.textContent = "Capturing"; meetStatus.className = "meet-status active"; }
+    const btnCapture = document.getElementById("btnMeetCapture");
+    if (btnCapture) btnCapture.disabled = true;
+    const btnStop = document.getElementById("btnMeetStop");
+    if (btnStop) btnStop.disabled = false;
+    const meetActivity = document.getElementById("meetActivity");
+    if (meetActivity) meetActivity.style.display = "";
+}
+
+// Match a remote speech segment to an existing speaker or create a new one
+function identifyRemoteSpeaker(avgRms) {
+    // Try to match an existing speaker within 40 % RMS tolerance
+    let matched = null;
+    for (const sp of remoteSpeakers) {
+        const ratio = avgRms / sp.avgRms;
+        if (ratio > 0.6 && ratio < 1.4) { matched = sp; break; }
+    }
+    if (matched) {
+        // Update running average
+        matched.avgRms = (matched.avgRms * matched.turnCount + avgRms) / (matched.turnCount + 1);
+        matched.turnCount++;
+        currentRemoteSpeakerId = matched.id;
+    } else {
+        // New speaker detected
+        const id = remoteSpeakers.length + 1;
+        const sp = { id, label: `Customer ${id}`, avgRms, turnCount: 1, firstSeen: new Date().toISOString() };
+        remoteSpeakers.push(sp);
+        currentRemoteSpeakerId = id;
+        console.log(`[Resonance] \uD83D\uDC64 New remote speaker detected: Customer ${id} (avgRms ${avgRms.toFixed(4)})`);
+        log(`\uD83D\uDC64 New remote speaker detected: <b>Customer ${id}</b>`);
+    }
+    persistSpeakers();
+    updateSpeakerList();
+}
+
+function persistSpeakers() {
+    try { sessionStorage.setItem("resonance_speakers", JSON.stringify([{ id: "local", label: "Agent", firstSeen: null }, ...remoteSpeakers.map(s => ({ ...s, id: `remote-${s.id}` }))])); } catch {}
+}
+
+function updateSpeakerList() {
+    const list = document.getElementById("speakerList");
+    if (!list) return;
+    let html = '<span class="spk-chip spk-local">\uD83C\uDFA4 Agent</span>';
+    for (const sp of remoteSpeakers) {
+        html += `<span class="spk-chip spk-remote">\uD83D\uDDA5\uFE0F ${sp.label} <small>(${sp.turnCount} turns)</small></span>`;
+    }
+    list.innerHTML = html;
+}
+
+function stopMeetCapture() {
+    if (meetLevelMonitorId) { cancelAnimationFrame(meetLevelMonitorId); meetLevelMonitorId = null; }
+    if (meetSource) { meetSource.disconnect(); meetSource = null; }
+    if (meetAnalyser) { meetAnalyser.disconnect(); meetAnalyser = null; }
+    if (meetStream) { meetStream.getTracks().forEach(t => t.stop()); meetStream = null; }
+    meetActive = false;
+    lastMeetRms = 0;
+    activeSpeaker = "local";
+    currentRemoteSpeakerId = null;
+    remoteSpeechActive = false;
+    remoteSilenceStart = 0;
+    segmentRmsAccum = 0;
+    segmentRmsSamples = 0;
+    // Keep remoteSpeakers across reconnects so dashboard retains history
+
+    console.log("[Resonance] Meet audio capture stopped.");
+    log("\uD83D\uDDA5\uFE0F Meet audio capture stopped.");
+
+    const meetStatus = document.getElementById("meetStatus");
+    if (meetStatus) { meetStatus.textContent = "Not connected"; meetStatus.className = "meet-status inactive"; }
+    const btnCapture = document.getElementById("btnMeetCapture");
+    if (btnCapture && socket && socket.readyState === WebSocket.OPEN) btnCapture.disabled = false;
+    const btnStop = document.getElementById("btnMeetStop");
+    if (btnStop) btnStop.disabled = true;
+    const meetActivity = document.getElementById("meetActivity");
+    if (meetActivity) meetActivity.style.display = "none";
+}
+
 // ── WebSocket lifecycle ────────────────────────────────────────────
 async function connect() {
     manualDisconnect = false;
@@ -389,6 +615,9 @@ async function connect() {
             log("⚠ Could not start microphone. Speak will not work.");
             console.error("[Resonance] Microphone init failed.");
         }
+        // Enable Meet capture now that audio pipeline is ready
+        const btnMeetCapture = document.getElementById("btnMeetCapture");
+        if (btnMeetCapture) btnMeetCapture.disabled = false;
     };
 
     socket.onclose = (e) => {
@@ -510,9 +739,22 @@ async function connect() {
         }
 
         // Collect event for the analytics dashboard
+        let speakerId = "local";
+        let speakerLabel = "Agent";
+        if (meetActive && activeSpeaker === "remote" && currentRemoteSpeakerId) {
+            const sp = remoteSpeakers.find(s => s.id === currentRemoteSpeakerId);
+            speakerId = `remote-${currentRemoteSpeakerId}`;
+            speakerLabel = sp?.label ?? `Customer ${currentRemoteSpeakerId}`;
+        } else if (meetActive && activeSpeaker === "remote") {
+            speakerId = "remote-0";
+            speakerLabel = "Customer";
+        }
         dashboardEvents.push({
             ts: new Date().toISOString(),
             transcript,
+            speaker: activeSpeaker === "remote" ? "remote" : "local",
+            speakerId,
+            speakerLabel,
             allEmotions: prosody,
             top5: sorted.slice(0, 5),
             metrics,

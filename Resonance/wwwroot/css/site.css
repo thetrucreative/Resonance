@@ -76,6 +76,36 @@ section { margin-bottom: 1.5rem; }
 .speech-indicator.silent { background: #1e2029; color: #555; }
 .speech-indicator.active { background: #1a2a1a; color: #2ecc71; }
 
+/* ── Google Meet integration ──────────────────── */
+.meet-controls { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-bottom: .4rem; }
+.meet-controls button {
+    padding: .4rem .9rem; border: 1px solid #333; border-radius: 6px;
+    background: #1a1d26; color: #ddd; cursor: pointer; font-size: .85rem;
+}
+.meet-controls button:hover:not([disabled]) { background: #262830; color: #fff; }
+.meet-controls button[disabled] { opacity: .4; cursor: default; }
+.meet-status {
+    display: inline-block; padding: .2rem .6rem; border-radius: 12px;
+    font-size: .78rem; font-weight: 600;
+}
+.meet-status.inactive { background: #1e2029; color: #556; }
+.meet-status.active { background: #29201a; color: #f0842a; }
+.meet-hint { font-size: .78rem; color: #556; margin-bottom: .5rem; }
+.meet-hint strong { color: #889; }
+.meet-activity { display: flex; flex-direction: column; gap: .5rem; }
+.bar-fill.meet-level {
+    background: linear-gradient(90deg, #f5a623, #e8722a, #e74c3c);
+    transition: width .05s ease;
+}
+.speaker-info { display: flex; gap: .5rem; align-items: center; font-size: .85rem; color: #889; }
+.speaker-indicator {
+    display: inline-block; padding: .2rem .6rem; border-radius: 12px;
+    font-size: .8rem; font-weight: 600;
+}
+.speaker-indicator.local  { background: #1a2a1a; color: #2ecc71; }
+.speaker-indicator.remote { background: #29201a; color: #f0842a; }
+.pivot-speaker { font-size: .78rem; font-weight: 600; }
+
 /* ── Strategy ──────────────────────────────────── */
 .strategy-badge {
     display: inline-block; padding: .3rem .9rem; border-radius: 20px;
@@ -98,6 +128,38 @@ section { margin-bottom: 1.5rem; }
 .log-area .entry { padding: .15rem 0; border-bottom: 1px solid #1e2029; }
 .log-area .entry:last-child { border-bottom: none; }
 .log-area .ts { color: #555; margin-right: .5rem; }
+
+/* ── Speaker chips & participant list ─────────── */
+.speaker-list-wrap { margin-top: .3rem; }
+.speaker-list-label { font-size: .78rem; color: #667; }
+.speaker-list { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .25rem; }
+.spk-chip {
+    display: inline-flex; align-items: center; gap: .25rem;
+    padding: .15rem .55rem; border-radius: 12px;
+    font-size: .75rem; font-weight: 600;
+}
+.spk-chip small { font-weight: 400; opacity: .7; }
+.spk-chip.spk-local  { background: #1a2a1a; color: #2ecc71; }
+.spk-chip.spk-remote { background: #29201a; color: #f0842a; }
+
+/* ── Participant cards (dashboard) ────────────── */
+.participant-cards { display: flex; gap: .75rem; flex-wrap: wrap; }
+.participant-card {
+    flex: 1; min-width: 180px; background: #161820;
+    border: 2px solid #333; border-radius: 10px; padding: .7rem .9rem;
+}
+.pc-header { display: flex; align-items: center; gap: .4rem; margin-bottom: .4rem; }
+.pc-icon { font-size: 1.1rem; }
+.pc-name { font-weight: 700; font-size: .9rem; color: #e2e4e9; }
+.pc-turns { margin-left: auto; font-size: .72rem; color: #667; }
+.pc-stats { display: flex; gap: .8rem; font-size: .75rem; color: #889; }
+.pc-stats b { color: #ccc; }
+.pc-top { font-size: .72rem; color: #667; margin-top: .3rem; }
+.pc-top b { color: #bbb; }
+
+/* ── Speaker colours in transcript table ─────── */
+.transcript-table td.spk-local  { color: #2ecc71; font-weight: 600; }
+.transcript-table td.spk-remote { color: #f0842a; font-weight: 600; }
 
 /* ── Top nav ──────────────────────────────────── */
 .top-nav { margin-top: .5rem; display: flex; gap: 1rem; justify-content: center; }

@@ -38,6 +38,13 @@
     </div>
 </section>
 
+<section id="dash-participants">
+    <h2>Participants</h2>
+    <div id="participantCards" class="participant-cards">
+        <p class="empty-state">No participants detected yet.</p>
+    </div>
+</section>
+
 <section id="dash-timeline">
     <h2>Emotion Timeline</h2>
     <div class="timeline-chart" id="timelineChart">
@@ -59,6 +66,7 @@
             <thead>
                 <tr>
                     <th>Time</th>
+                    <th>Speaker</th>
                     <th>Transcript</th>
                     <th>Top Emotion</th>
                     <th>Confusion</th>
@@ -92,6 +100,7 @@
 
         document.getElementById("eventCount").textContent = `${events.length} events`;
         renderSummary();
+        renderParticipants();
         renderTimeline();
         renderTopEmotions();
         renderTranscript();
@@ -107,6 +116,45 @@
         document.getElementById("sumDoubt").textContent = (avg("doubt") * 100).toFixed(1) + "%";
         document.getElementById("sumFrustration").textContent = (avg("frustration") * 100).toFixed(1) + "%";
         document.getElementById("sumPivots").textContent = events.filter(e => e.strategy !== "Baseline").length;
+    }
+
+    function renderParticipants() {
+        const container = document.getElementById("participantCards");
+        if (events.length === 0) { container.innerHTML = '<p class="empty-state">No participants detected yet.</p>'; return; }
+        // Group events by speakerId
+        const byId = {};
+        events.forEach(e => {
+            const id = e.speakerId || (e.speaker === "remote" ? "remote-0" : "local");
+            const label = e.speakerLabel || (e.speaker === "remote" ? "Customer" : "Agent");
+            if (!byId[id]) byId[id] = { label, events: [] };
+            byId[id].events.push(e);
+        });
+        let html = '';
+        const spkColors = ["#f0842a", "#3498db", "#2ecc71", "#e74c3c", "#9b59b6", "#f5a623", "#1abc9c", "#e67e22"];
+        let ci = 0;
+        for (const [id, data] of Object.entries(byId)) {
+            const n = data.events.length;
+            const avgC = (data.events.reduce((s, e) => s + (e.metrics?.confusion ?? 0), 0) / n * 100).toFixed(1);
+            const avgD = (data.events.reduce((s, e) => s + (e.metrics?.doubt ?? 0), 0) / n * 100).toFixed(1);
+            const avgF = (data.events.reduce((s, e) => s + (e.metrics?.frustration ?? 0), 0) / n * 100).toFixed(1);
+            // Top emotion for this speaker
+            const totals = {};
+            data.events.forEach(e => { if (e.allEmotions) for (const [nm, sc] of Object.entries(e.allEmotions)) totals[nm] = (totals[nm] || 0) + sc; });
+            const topEmo = Object.entries(totals).sort((a, b) => b[1] - a[1])[0];
+            const topName = topEmo ? topEmo[0] : "—";
+            const color = id === "local" ? "#2ecc71" : spkColors[ci++ % spkColors.length];
+            const icon = id === "local" ? "🎤" : "🖥️";
+            html += `<div class="participant-card" style="border-color:${color}">
+                <div class="pc-header"><span class="pc-icon" style="color:${color}">${icon}</span><span class="pc-name">${data.label}</span><span class="pc-turns">${n} turn${n !== 1 ? "s" : ""}</span></div>
+                <div class="pc-stats">
+                    <span>Confusion <b>${avgC}%</b></span>
+                    <span>Doubt <b>${avgD}%</b></span>
+                    <span>Frustration <b>${avgF}%</b></span>
+                </div>
+                <div class="pc-top">Dominant: <b>${topName}</b></div>
+            </div>`;
+        }
+        container.innerHTML = html;
     }
 
     function renderTimeline() {
@@ -151,17 +199,20 @@
 
     function renderTranscript() {
         const tbody = document.getElementById("transcriptBody");
-        if (events.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No data yet.</td></tr>'; return; }
+        if (events.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No data yet.</td></tr>'; return; }
         let html = '';
         events.forEach(e => {
             const time = new Date(e.ts).toLocaleTimeString();
+            const icon = e.speaker === "remote" ? "🖥️" : "🎤";
+            const label = e.speakerLabel || (e.speaker === "remote" ? "Customer" : "Agent");
+            const spkClass = e.speaker === "remote" ? "spk-remote" : "spk-local";
             const topEmo = e.top5?.[0]?.name ?? "—";
             const c = ((e.metrics?.confusion ?? 0) * 100).toFixed(1) + "%";
             const d = ((e.metrics?.doubt ?? 0) * 100).toFixed(1) + "%";
             const f = ((e.metrics?.frustration ?? 0) * 100).toFixed(1) + "%";
             const strat = e.strategy || "Baseline";
             const cls = strat !== "Baseline" ? ' class="pivot-row"' : '';
-            html += `<tr${cls}><td>${time}</td><td>${e.transcript || "—"}</td><td>${topEmo}</td><td>${c}</td><td>${d}</td><td>${f}</td><td><span class="strat-badge strat-${strat.toLowerCase()}">${strat}</span></td></tr>`;
+            html += `<tr${cls}><td>${time}</td><td class="${spkClass}">${icon} ${label}</td><td>${e.transcript || "—"}</td><td>${topEmo}</td><td>${c}</td><td>${d}</td><td>${f}</td><td><span class="strat-badge strat-${strat.toLowerCase()}">${strat}</span></td></tr>`;
         });
         tbody.innerHTML = html;
     }
@@ -176,6 +227,7 @@
             html += `<div class="pivot-entry">
                 <span class="pivot-time">${time}</span>
                 <span class="strat-badge strat-${e.strategy.toLowerCase()}">${e.strategy}</span>
+                <span class="pivot-speaker">${e.speaker === "remote" ? "🖥️" : "🎤"} ${e.speakerLabel || (e.speaker === "remote" ? "Customer" : "Agent")}</span>
                 <span class="pivot-transcript">"${e.transcript || "—"}"</span>
                 <span class="pivot-scores">C=${((e.metrics?.confusion ?? 0) * 100).toFixed(1)}% D=${((e.metrics?.doubt ?? 0) * 100).toFixed(1)}% F=${((e.metrics?.frustration ?? 0) * 100).toFixed(1)}%</span>
             </div>`;
@@ -185,10 +237,11 @@
 
     function exportCSV() {
         if (events.length === 0) { alert("No data to export."); return; }
-        const header = "Timestamp,Transcript,TopEmotion,Confusion%,Doubt%,Frustration%,Strategy\n";
+        const header = "Timestamp,Speaker,Transcript,TopEmotion,Confusion%,Doubt%,Frustration%,Strategy\n";
         const rows = events.map(e => {
             const top = e.top5?.[0]?.name ?? "";
-            return `"${e.ts}","${(e.transcript || "").replace(/"/g, '""')}","${top}",${((e.metrics?.confusion ?? 0) * 100).toFixed(1)},${((e.metrics?.doubt ?? 0) * 100).toFixed(1)},${((e.metrics?.frustration ?? 0) * 100).toFixed(1)},"${e.strategy}"`;
+            const spk = e.speakerLabel || (e.speaker === "remote" ? "Customer" : "Agent");
+            return `"${e.ts}","${spk}","${(e.transcript || "").replace(/"/g, '""')}","${top}",${((e.metrics?.confusion ?? 0) * 100).toFixed(1)},${((e.metrics?.doubt ?? 0) * 100).toFixed(1)},${((e.metrics?.frustration ?? 0) * 100).toFixed(1)},"${e.strategy}"`;
         }).join("\n");
         const blob = new Blob([header + rows], { type: "text/csv" });
         const a = document.createElement("a");

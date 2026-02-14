@@ -20,6 +20,31 @@
     <div id="connectionStatus" class="status disconnected">Disconnected</div>
 </section>
 
+<section id="meet-panel">
+    <h2>🖥️ Google Meet Integration</h2>
+    <div class="meet-controls">
+        <button id="btnMeetCapture" onclick="startMeetCapture()" disabled>📺 Capture Meet Audio</button>
+        <button id="btnMeetStop" onclick="stopMeetCapture()" disabled>⏹ Stop Capture</button>
+        <span id="meetStatus" class="meet-status inactive">Not connected</span>
+    </div>
+    <p class="meet-hint">Open Google Meet in another tab, click <strong>Capture Meet Audio</strong>, select the Meet tab, and check <strong>"Share tab audio"</strong>.</p>
+    <div class="meet-activity" id="meetActivity" style="display:none;">
+        <div class="meter">
+            <span class="label">Meet Audio</span>
+            <div class="bar-track"><div class="bar-fill meet-level" id="meetLevelBar"></div></div>
+            <span class="value" id="meetLevelVal">0.0000</span>
+        </div>
+        <div class="speaker-info">
+            <span>Active speaker:</span>
+            <span id="activeSpeakerIndicator" class="speaker-indicator local">🎤 Agent</span>
+        </div>
+        <div class="speaker-list-wrap">
+            <span class="speaker-list-label">Detected participants:</span>
+            <div id="speakerList" class="speaker-list"><span class="spk-chip spk-local">🎤 Agent</span></div>
+        </div>
+    </div>
+</section>
+
 <section id="mic-panel">
     <h2>Microphone Activity</h2>
     <div class="mic-activity">
