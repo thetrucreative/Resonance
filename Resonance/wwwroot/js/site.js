@@ -314,13 +314,19 @@ function extractMetrics(prosodyScores) {
 }
 
 // ── .NET Policy Engine bridge ──────────────────────────────────────
-async function pivotLogic(metrics) {
-    console.log("[Resonance] Calling /Home/PivotLogic with:", metrics);
+async function pivotLogic(metrics, sorted) {
+    // Send full context to the backend: key metrics + top-5 emotions + turn index
+    const payload = {
+        ...metrics,
+        topEmotions: sorted ? sorted.slice(0, 5).map(e => ({ name: e.name, score: e.score })) : [],
+        turnIndex: dashboardEvents.length + 1
+    };
+    console.log("[Resonance] Calling /Home/PivotLogic with:", payload);
     try {
         const res = await fetch("/Home/PivotLogic", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(metrics)
+            body: JSON.stringify(payload)
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const result = await res.json();
@@ -532,7 +538,7 @@ function identifyRemoteSpeaker(avgRms) {
 }
 
 function persistSpeakers() {
-    try { sessionStorage.setItem("resonance_speakers", JSON.stringify([{ id: "local", label: "Agent", firstSeen: null }, ...remoteSpeakers.map(s => ({ ...s, id: `remote-${s.id}` }))])); } catch {}
+    try { localStorage.setItem("resonance_speakers", JSON.stringify([{ id: "local", label: "Agent", firstSeen: null }, ...remoteSpeakers.map(s => ({ ...s, id: `remote-${s.id}` }))])); } catch {}
 }
 
 function updateSpeakerList() {
@@ -726,15 +732,22 @@ async function connect() {
         updateBar(barDoubt,       valDoubt,       metrics.doubt);
         updateBar(barFrustration, valFrustration, metrics.frustration);
 
-        const adaptation = await pivotLogic(metrics);
+        const adaptation = await pivotLogic(metrics, sorted);
         if (adaptation) {
             activeStrategy.textContent = adaptation.strategy;
             activePrompt.textContent   = adaptation.newSystemPrompt;
-            log(`🔄 Strategy → <b>${adaptation.strategy}</b>`);
-            console.log("[Resonance] Strategy pivot:", adaptation.strategy);
 
+            // Enhanced logging with severity and reasoning
+            const sev = adaptation.severity || "none";
+            const reason = adaptation.reasoning || "";
             if (adaptation.strategy !== "Baseline") {
+                log(`🔄 Strategy → <b>${adaptation.strategy}</b> [${sev}]`);
+                if (reason) log(`💡 Reason: ${reason}`);
+                console.log(`[Resonance] ⚡ PIVOT: ${adaptation.strategy} (${sev}) — ${reason}`);
                 sendSessionSettings(adaptation.newSystemPrompt);
+            } else {
+                log(`🔄 Strategy → <b>Baseline</b>`);
+                console.log("[Resonance] Strategy: Baseline —", reason);
             }
         }
 
@@ -758,10 +771,12 @@ async function connect() {
             allEmotions: prosody,
             top5: sorted.slice(0, 5),
             metrics,
-            strategy: adaptation?.strategy ?? "Baseline"
+            strategy: adaptation?.strategy ?? "Baseline",
+            severity: adaptation?.severity ?? "none",
+            reasoning: adaptation?.reasoning ?? ""
         });
-        // Persist to sessionStorage so the Dashboard page can read it
-        try { sessionStorage.setItem("resonance_events", JSON.stringify(dashboardEvents)); } catch {}
+        // Persist to localStorage so the Dashboard page (separate tab) can read it
+        try { localStorage.setItem("resonance_events", JSON.stringify(dashboardEvents)); } catch {}
     };
 }
 

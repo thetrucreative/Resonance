@@ -233,17 +233,36 @@ section { margin-bottom: 1.5rem; }
 .strat-simplification { background: #1a2029; color: #3498db; }
 .strat-authority      { background: #29201a; color: #f39c12; }
 .strat-de-escalation  { background: #291a1a; color: #e74c3c; }
+.strat-engagement     { background: #1a2029; color: #3498db; }
+.strat-proactive      { background: #1a2920; color: #2ecc71; }
 
 /* ── Pivot log ──────────────────────────────── */
-.pivot-log { display: flex; flex-direction: column; gap: .4rem; }
+.pivot-log { display: flex; flex-direction: column; gap: .5rem; }
 .pivot-entry {
     display: flex; gap: .6rem; align-items: center; flex-wrap: wrap;
-    padding: .4rem .6rem; background: #161820; border: 1px solid #262830;
+    padding: .5rem .7rem; background: #161820; border: 1px solid #262830;
     border-radius: 6px; font-size: .78rem;
 }
+.pivot-entry.sev-high     { border-left: 3px solid #e74c3c; }
+.pivot-entry.sev-moderate { border-left: 3px solid #f5a623; }
+.pivot-entry.sev-low      { border-left: 3px solid #3498db; }
+.pivot-num { color: #556; font-weight: 700; font-size: .72rem; }
 .pivot-time { color: #556; font-size: .72rem; }
 .pivot-transcript { color: #bbb; font-style: italic; }
 .pivot-scores { color: #667; font-size: .72rem; }
+.pivot-reason {
+    width: 100%; margin-top: .2rem; padding: .3rem .5rem;
+    background: #111318; border-radius: 4px;
+    font-size: .74rem; color: #99a; line-height: 1.4;
+}
+.sev-badge {
+    display: inline-block; padding: .1rem .4rem; border-radius: 8px;
+    font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+}
+.sev-badge.sev-high     { background: #291a1a; color: #e74c3c; }
+.sev-badge.sev-moderate { background: #29201a; color: #f5a623; }
+.sev-badge.sev-low      { background: #1a2029; color: #3498db; }
+.sev-badge.sev-none     { background: #1e2029; color: #556; }
 
 .empty-state { color: #445; font-style: italic; font-size: .85rem; padding: 1rem 0; text-align: center; }
 .empty-state a { color: #f0842a; }

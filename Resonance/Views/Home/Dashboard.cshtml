@@ -94,7 +94,7 @@
 
     function loadEvents() {
         try {
-            const raw = sessionStorage.getItem("resonance_events");
+            const raw = localStorage.getItem("resonance_events");
             events = raw ? JSON.parse(raw) : [];
         } catch { events = []; }
 
@@ -222,14 +222,19 @@
         const pivots = events.filter(e => e.strategy !== "Baseline");
         if (pivots.length === 0) { container.innerHTML = '<p class="empty-state">No strategy pivots recorded yet.</p>'; return; }
         let html = '';
-        pivots.forEach(e => {
+        pivots.forEach((e, i) => {
             const time = new Date(e.ts).toLocaleTimeString();
-            html += `<div class="pivot-entry">
+            const sev = e.severity || "low";
+            const reason = e.reasoning || "";
+            html += `<div class="pivot-entry sev-${sev}">
+                <span class="pivot-num">#${i + 1}</span>
                 <span class="pivot-time">${time}</span>
                 <span class="strat-badge strat-${e.strategy.toLowerCase()}">${e.strategy}</span>
+                <span class="sev-badge sev-${sev}">${sev}</span>
                 <span class="pivot-speaker">${e.speaker === "remote" ? "🖥️" : "🎤"} ${e.speakerLabel || (e.speaker === "remote" ? "Customer" : "Agent")}</span>
                 <span class="pivot-transcript">"${e.transcript || "—"}"</span>
                 <span class="pivot-scores">C=${((e.metrics?.confusion ?? 0) * 100).toFixed(1)}% D=${((e.metrics?.doubt ?? 0) * 100).toFixed(1)}% F=${((e.metrics?.frustration ?? 0) * 100).toFixed(1)}%</span>
+                ${reason ? `<div class="pivot-reason">💡 ${reason}</div>` : ""}
             </div>`;
         });
         container.innerHTML = html;
@@ -237,11 +242,12 @@
 
     function exportCSV() {
         if (events.length === 0) { alert("No data to export."); return; }
-        const header = "Timestamp,Speaker,Transcript,TopEmotion,Confusion%,Doubt%,Frustration%,Strategy\n";
+        const header = "Timestamp,Speaker,Transcript,TopEmotion,Confusion%,Doubt%,Frustration%,Strategy,Severity,Reasoning\n";
         const rows = events.map(e => {
             const top = e.top5?.[0]?.name ?? "";
             const spk = e.speakerLabel || (e.speaker === "remote" ? "Customer" : "Agent");
-            return `"${e.ts}","${spk}","${(e.transcript || "").replace(/"/g, '""')}","${top}",${((e.metrics?.confusion ?? 0) * 100).toFixed(1)},${((e.metrics?.doubt ?? 0) * 100).toFixed(1)},${((e.metrics?.frustration ?? 0) * 100).toFixed(1)},"${e.strategy}"`;
+            const reason = (e.reasoning || "").replace(/"/g, '""');
+            return `"${e.ts}","${spk}","${(e.transcript || "").replace(/"/g, '""')}","${top}",${((e.metrics?.confusion ?? 0) * 100).toFixed(1)},${((e.metrics?.doubt ?? 0) * 100).toFixed(1)},${((e.metrics?.frustration ?? 0) * 100).toFixed(1)},"${e.strategy}","${e.severity || "none"}","${reason}"`;
         }).join("\n");
         const blob = new Blob([header + rows], { type: "text/csv" });
         const a = document.createElement("a");
