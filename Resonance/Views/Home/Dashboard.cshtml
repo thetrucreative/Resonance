@@ -188,43 +188,67 @@
     }
 
     function renderTranscript() {
-        const tbody = document.getElementById("transcriptBody");
-        if (events.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No data yet.</td></tr>'; return; }
+        const container = document.getElementById("transcriptFeed");
+        if (events.length === 0) { container.innerHTML = '<p class="empty-state">No data yet.</p>'; return; }
         let html = '';
-        events.forEach(e => {
+        events.forEach((e, i) => {
             const time = new Date(e.ts).toLocaleTimeString();
             const icon = e.speaker === "assistant" ? "◆" : e.speaker === "remote" ? "○" : "●";
             const label = e.speakerLabel || (e.speaker === "assistant" ? "AI Assistant" : e.speaker === "remote" ? "Customer" : "Agent (You)");
             const spkClass = e.speaker === "assistant" ? "spk-assistant" : e.speaker === "remote" ? "spk-remote" : "spk-local";
-            const topEmo = e.top5?.[0]?.name ?? "—";
-            const c = ((e.metrics?.confusion ?? 0) * 100).toFixed(1) + "%";
-            const d = ((e.metrics?.doubt ?? 0) * 100).toFixed(1) + "%";
-            const f = ((e.metrics?.frustration ?? 0) * 100).toFixed(1) + "%";
+            const isAssistant = e.speaker === "assistant";
             const strat = e.strategy || "Baseline";
-            const cls = strat !== "Baseline" ? ' class="pivot-row"' : '';
-            html += `<tr${cls}><td>${time}</td><td class="${spkClass}">${icon} ${label}</td><td>${e.transcript || "—"}</td><td>${topEmo}</td><td>${c}</td><td>${d}</td><td>${f}</td><td><span class="strat-badge strat-${strat.toLowerCase()}">${strat}</span></td></tr>`;
+            const hasPivot = strat !== "Baseline" && strat !== "—";
+            const borderClass = hasPivot ? ` tf-pivot` : "";
+
+            html += `<div class="tf-msg${borderClass}${isAssistant ? " tf-assistant" : ""}">`;
+            html += `<div class="tf-header">`;
+            html += `<span class="tf-speaker ${spkClass}">${icon} ${label}</span>`;
+            html += `<span class="tf-time">${time}</span>`;
+            if (hasPivot) html += `<span class="strat-badge strat-${strat.toLowerCase()}">${strat}</span>`;
+            html += `</div>`;
+            html += `<div class="tf-body">${e.transcript || "—"}</div>`;
+
+            if (!isAssistant) {
+                const topEmo = e.top5?.[0]?.name ?? "";
+                const c = ((e.metrics?.confusion ?? 0) * 100).toFixed(1);
+                const d = ((e.metrics?.doubt ?? 0) * 100).toFixed(1);
+                const f = ((e.metrics?.frustration ?? 0) * 100).toFixed(1);
+                html += `<div class="tf-meta">`;
+                if (topEmo) html += `<span class="tf-emotion">${topEmo}</span>`;
+                html += `<span>C ${c}%</span><span>D ${d}%</span><span>F ${f}%</span>`;
+                html += `</div>`;
+            }
+
+            html += `</div>`;
         });
-        tbody.innerHTML = html;
+        container.innerHTML = html;
     }
 
     function renderPivots() {
         const container = document.getElementById("pivotLog");
-        const pivots = events.filter(e => e.strategy !== "Baseline");
+        const pivots = events.filter(e => e.strategy !== "Baseline" && e.strategy !== "—");
         if (pivots.length === 0) { container.innerHTML = '<p class="empty-state">No strategy pivots recorded yet.</p>'; return; }
         let html = '';
         pivots.forEach((e, i) => {
             const time = new Date(e.ts).toLocaleTimeString();
             const sev = e.severity || "low";
             const reason = e.reasoning || "";
-            html += `<div class="pivot-entry sev-${sev}">
-                <span class="pivot-num">#${i + 1}</span>
-                <span class="pivot-time">${time}</span>
-                <span class="strat-badge strat-${e.strategy.toLowerCase()}">${e.strategy}</span>
-                <span class="sev-badge sev-${sev}">${sev}</span>
-                ${e.speakerLabel || (e.speaker === "assistant" ? "AI Assistant" : e.speaker === "remote" ? "Customer" : "Agent (You)")}
-                <span class="pivot-transcript">"${e.transcript || "—"}"</span>
-                <span class="pivot-scores">C=${((e.metrics?.confusion ?? 0) * 100).toFixed(1)}% D=${((e.metrics?.doubt ?? 0) * 100).toFixed(1)}% F=${((e.metrics?.frustration ?? 0) * 100).toFixed(1)}%</span>
-                ${reason ? `<div class="pivot-reason">${reason}</div>` : ""}
+            const label = e.speakerLabel || (e.speaker === "assistant" ? "AI Assistant" : e.speaker === "remote" ? "Customer" : "Agent (You)");
+            const c = ((e.metrics?.confusion ?? 0) * 100).toFixed(1);
+            const d = ((e.metrics?.doubt ?? 0) * 100).toFixed(1);
+            const f = ((e.metrics?.frustration ?? 0) * 100).toFixed(1);
+            html += `<div class="pv-card sev-${sev}">
+                <div class="pv-header">
+                    <span class="pv-num">#${i + 1}</span>
+                    <span class="pv-time">${time}</span>
+                    <span class="strat-badge strat-${e.strategy.toLowerCase()}">${e.strategy}</span>
+                    <span class="sev-badge sev-${sev}">${sev.toUpperCase()}</span>
+                    <span class="pv-speaker">${label}</span>
+                </div>
+                <div class="pv-transcript">"${e.transcript || "—"}"</div>
+                <div class="pv-scores">Confusion ${c}% · Doubt ${d}% · Frustration ${f}%</div>
+                ${reason ? `<div class="pv-reason">${reason}</div>` : ""}
             </div>`;
         });
         container.innerHTML = html;
