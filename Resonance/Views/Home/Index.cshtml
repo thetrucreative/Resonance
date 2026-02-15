@@ -68,17 +68,17 @@
         </div>
     </section>
 
-    <section id="meet-panel" class="surface" data-panel="meet" data-panel-label="Google Meet" data-panel-default="hidden">
-        <h2>Google Meet Integration</h2>
+    <section id="meet-panel" class="surface" data-panel="meet" data-panel-label="Call Capture" data-panel-default="hidden">
+        <h2>Live Call Capture</h2>
         <div class="meet-controls">
-            <button id="btnMeetCapture" disabled>Capture Meet Audio</button>
+            <button id="btnMeetCapture" disabled>Capture Call Audio</button>
             <button id="btnMeetStop" disabled>Stop Capture</button>
             <span id="meetStatus" class="meet-status inactive">Not connected</span>
         </div>
-        <p class="meet-hint">Open Google Meet in another tab, click <strong>Capture Meet Audio</strong>, select the Meet tab, and check <strong>"Share tab audio"</strong>.</p>
+        <p class="meet-hint">Open your call (Teams, Meet, Zoom, etc.) in another tab, click <strong>Capture Call Audio</strong>, select that tab, and check <strong>"Share tab audio"</strong>.</p>
         <div class="meet-activity" id="meetActivity" style="display:none;">
             <div class="meter">
-                <span class="label">Meet Audio</span>
+                <span class="label">Call Audio</span>
                 <div class="bar-track"><div class="bar-fill meet-level" id="meetLevelBar"></div></div>
                 <span class="value" id="meetLevelVal">0.0000</span>
             </div>

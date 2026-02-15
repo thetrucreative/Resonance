@@ -1,5 +1,5 @@
 /**
- * Captures audio from a browser tab (Google Meet) via getDisplayMedia,
+ * Captures audio from a browser tab (Teams, Meet, Zoom, etc.) via getDisplayMedia,
  * mixes it into the AudioManager pipeline, and profiles individual
  * remote speakers by their average volume level.
  */

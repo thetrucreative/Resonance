@@ -124,13 +124,13 @@ meet.onNewSpeaker = (sp) => {
 
 meet.onStatusChange = (active) => {
     if (active) {
-        log("Google Meet audio captured. Remote speakers are now analyzed.");
+        log("Call audio captured. Remote speakers are now analyzed.");
         if (dom.meetStatus) { dom.meetStatus.textContent = "Capturing"; dom.meetStatus.className = "meet-status active"; }
         if (dom.btnMeetCapture) dom.btnMeetCapture.disabled = true;
         if (dom.btnMeetStop) dom.btnMeetStop.disabled = false;
         if (dom.meetActivity) dom.meetActivity.style.display = "";
     } else {
-        log("Meet audio capture stopped.");
+        log("Call audio capture stopped.");
         if (dom.meetStatus) { dom.meetStatus.textContent = "Not connected"; dom.meetStatus.className = "meet-status inactive"; }
         if (dom.btnMeetCapture && hume.isConnected()) dom.btnMeetCapture.disabled = false;
         if (dom.btnMeetStop) dom.btnMeetStop.disabled = true;
@@ -186,7 +186,7 @@ hume.onConnected = async () => {
     } else {
         log("Could not start microphone. Speak will not work.");
         if (location.protocol !== "https:" && location.hostname !== "localhost") {
-            log('<b>HTTPS required</b> — Microphone and Meet capture need a secure connection. Enable SSL on your domain.');
+            log('<b>HTTPS required</b> — Microphone and call capture need a secure connection. Enable SSL on your domain.');
         }
     }
 };

@@ -18,6 +18,10 @@
 **/Properties/PublishProfiles/*.pubxml
 **/Properties/PublishProfiles/*.pubxml.user
 
+# App settings (may contain secrets/connection strings)
+**/appsettings.json
+**/appsettings.*.json
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

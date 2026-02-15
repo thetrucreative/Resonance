@@ -37,10 +37,14 @@ main {
 @media (max-width: 740px) {
     .page-grid { grid-template-columns: 1fr; }
     main { padding: 1rem; }
+    .tagline { white-space: normal; text-align: center; }
+    :root { --header-h: auto; }
+    header { height: auto; }
+    .header-row { padding: 0.5rem 1rem; }
 }
 
 /* ── Sticky header bar ────────────────────────────── */
-:root { --header-h: 56px; }
+:root { --header-h: 64px; }
 
 header {
     position: fixed; top: 0; left: 0; right: 0;
@@ -56,11 +60,11 @@ header {
 }
 .header-brand {
     flex: 1;
-    display: flex; align-items: baseline; justify-content: center;
-    gap: .6rem; margin-right: 40px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    margin-right: 40px;
 }
 .header-brand h1 { font-size: 1.3rem; color: #f0842a; line-height: 1; }
-.tagline { color: #556; font-size: .82rem; white-space: nowrap; }
+.tagline { color: #556; font-size: clamp(0.85rem, 1.8vw, 1.15rem); white-space: nowrap; margin: 0; }
 
 h2 { font-size: 1.15rem; color: #bbc; margin-bottom: .75rem; font-weight: 600; }
 
