@@ -2,7 +2,7 @@
 
 Adaptive AI conversational agent that detects emotional cues in real-time and self-corrects its behavior to maintain productive dialogue.
 
-**Live demo:** http://resonance.rateflowapp.com/
+**Live demo:** https://resonance.rateflowapp.com/
 
 ---
 
