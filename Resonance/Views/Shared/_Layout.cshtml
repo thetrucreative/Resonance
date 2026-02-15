@@ -8,17 +8,84 @@
 </head>
 <body>
     <header>
-        <h1>Resonance</h1>
-        <p class="tagline">Adaptive AI · Emotional Alignment in Real-Time</p>
-        <nav class="top-nav">
-            <a href="/">Live Agent</a>
-            <a href="/Home/Dashboard" target="_blank">Analytics Dashboard ↗</a>
-        </nav>
+        <div class="header-row">
+            <button id="menuToggle" class="menu-toggle" aria-label="Open menu">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="header-brand">
+                <h1>Resonance</h1>
+                <p class="tagline">Adaptive AI · Emotional Alignment</p>
+            </div>
+        </div>
     </header>
+
+    <nav id="sideMenu" class="side-menu" aria-hidden="true">
+        <div class="menu-section">
+            <h3 class="menu-section-title">Navigation</h3>
+            <a href="/" class="menu-link">Live Agent</a>
+            <a href="/Home/Dashboard" target="_blank" class="menu-link">Analytics Dashboard</a>
+        </div>
+        <div class="menu-section" id="menuPanels">
+            <h3 class="menu-section-title">Panels</h3>
+        </div>
+    </nav>
+    <div id="menuOverlay" class="menu-overlay"></div>
 
     <main>
         @RenderBody()
     </main>
+
+    <script>
+    (function () {
+        var menu = document.getElementById("sideMenu");
+        var overlay = document.getElementById("menuOverlay");
+        var btn = document.getElementById("menuToggle");
+
+        function isOpen() { return menu.classList.contains("open"); }
+        function openMenu() { menu.classList.add("open"); overlay.classList.add("visible"); menu.setAttribute("aria-hidden", "false"); }
+        function closeMenu() { menu.classList.remove("open"); overlay.classList.remove("visible"); menu.setAttribute("aria-hidden", "true"); }
+
+        btn.addEventListener("click", function () { isOpen() ? closeMenu() : openMenu(); });
+        overlay.addEventListener("click", closeMenu);
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeMenu(); });
+
+        // Build panel toggles from [data-panel] sections on the current page
+        var panelsContainer = document.getElementById("menuPanels");
+        var panels = document.querySelectorAll("[data-panel]");
+        if (panels.length === 0) { panelsContainer.style.display = "none"; return; }
+
+        var storageKey = "resonance_panels_" + location.pathname;
+        var saved = {};
+        try { saved = JSON.parse(localStorage.getItem(storageKey)) || {}; } catch (e) { saved = {}; }
+
+        panels.forEach(function (section) {
+            var id = section.dataset.panel;
+            var label = section.dataset.panelLabel || (section.querySelector("h2") ? section.querySelector("h2").textContent : id);
+            var defaultOn = section.dataset.panelDefault !== "hidden";
+            var visible = saved[id] !== undefined ? saved[id] : defaultOn;
+
+            if (!visible) section.classList.add("panel-hidden");
+
+            var toggle = document.createElement("label");
+            toggle.className = "menu-toggle-item";
+            var cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.checked = visible;
+            var span = document.createElement("span");
+            span.textContent = label;
+            toggle.appendChild(cb);
+            toggle.appendChild(span);
+
+            cb.addEventListener("change", function () {
+                section.classList.toggle("panel-hidden", !cb.checked);
+                saved[id] = cb.checked;
+                try { localStorage.setItem(storageKey, JSON.stringify(saved)); } catch (e) {}
+            });
+
+            panelsContainer.appendChild(toggle);
+        });
+    })();
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

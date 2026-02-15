@@ -2,96 +2,104 @@
     ViewData["Title"] = "Home";
 }
 
-<section id="controls">
-    <div class="api-key-group">
-        <label for="apiKey">Hume API Key</label>
-        <input type="password" id="apiKey" placeholder="Enter your Hume API key" />
-    </div>
-    <div class="config-group">
-        <label for="configId">Config ID <span class="optional">(optional)</span></label>
-        <input type="text" id="configId" placeholder="EVI config ID" />
-    </div>
-    <button id="btnConnect">Connect</button>
-    <button id="btnDisconnect" disabled>Disconnect</button>
-</section>
+<div class="page-grid">
 
-<section id="status-panel">
-    <h2>Connection</h2>
-    <div id="connectionStatus" class="status disconnected">Disconnected</div>
-</section>
+    <section id="controls" class="surface surface-wide">
+        <h2>Connect to Hume EVI</h2>
+        <div class="control-row">
+            <div class="field">
+                <label for="apiKey">Hume API Key</label>
+                <input type="password" id="apiKey" placeholder="Enter your Hume API key" />
+            </div>
+            <div class="field">
+                <label for="configId">Config ID <span class="optional">(optional)</span></label>
+                <input type="text" id="configId" placeholder="EVI config ID" />
+            </div>
+            <div class="field field-btns">
+                <button id="btnConnect">Connect</button>
+                <button id="btnDisconnect" disabled>Disconnect</button>
+            </div>
+        </div>
+        <div class="control-status">
+            <span>Status:</span>
+            <span id="connectionStatus" class="status disconnected">Disconnected</span>
+        </div>
+    </section>
 
-<section id="meet-panel">
-    <h2>🖥️ Google Meet Integration</h2>
-    <div class="meet-controls">
-        <button id="btnMeetCapture" onclick="startMeetCapture()" disabled>📺 Capture Meet Audio</button>
-        <button id="btnMeetStop" onclick="stopMeetCapture()" disabled>⏹ Stop Capture</button>
-        <span id="meetStatus" class="meet-status inactive">Not connected</span>
-    </div>
-    <p class="meet-hint">Open Google Meet in another tab, click <strong>Capture Meet Audio</strong>, select the Meet tab, and check <strong>"Share tab audio"</strong>.</p>
-    <div class="meet-activity" id="meetActivity" style="display:none;">
-        <div class="meter">
-            <span class="label">Meet Audio</span>
-            <div class="bar-track"><div class="bar-fill meet-level" id="meetLevelBar"></div></div>
-            <span class="value" id="meetLevelVal">0.0000</span>
+    <section id="emotion-panel" class="surface" data-panel="emotions" data-panel-default="visible">
+        <h2>Live Emotion Scores</h2>
+        <div class="meters">
+            <div class="meter">
+                <span class="label">Confusion</span>
+                <div class="bar-track"><div class="bar-fill" id="barConfusion"></div></div>
+                <span class="value" id="valConfusion">0.00</span>
+            </div>
+            <div class="meter">
+                <span class="label">Doubt</span>
+                <div class="bar-track"><div class="bar-fill" id="barDoubt"></div></div>
+                <span class="value" id="valDoubt">0.00</span>
+            </div>
+            <div class="meter">
+                <span class="label">Frustration</span>
+                <div class="bar-track"><div class="bar-fill" id="barFrustration"></div></div>
+                <span class="value" id="valFrustration">0.00</span>
+            </div>
         </div>
-        <div class="speaker-info">
-            <span>Active speaker:</span>
-            <span id="activeSpeakerIndicator" class="speaker-indicator local">🎤 Agent</span>
-        </div>
-        <div class="speaker-list-wrap">
-            <span class="speaker-list-label">Detected participants:</span>
-            <div id="speakerList" class="speaker-list"><span class="spk-chip spk-local">🎤 Agent</span></div>
-        </div>
-    </div>
-</section>
+    </section>
 
-<section id="mic-panel">
-    <h2>Microphone Activity</h2>
-    <div class="mic-activity">
-        <div class="meter">
-            <span class="label">Mic Level</span>
-            <div class="bar-track"><div class="bar-fill mic-level" id="micLevelBar"></div></div>
-            <span class="value" id="micLevelVal">0.0000</span>
-        </div>
-        <div class="mic-stats">
-            <span>Frames sent: <strong id="framesSent">0</strong></span>
-            <span id="speechIndicator" class="speech-indicator silent">Silent</span>
-        </div>
-    </div>
-</section>
+    <section id="strategy-panel" class="surface" data-panel="strategy" data-panel-default="visible">
+        <h2>Active Strategy</h2>
+        <div id="activeStrategy" class="strategy-badge">Baseline</div>
+        <pre id="activePrompt" class="prompt-display">No adaptation yet.</pre>
+    </section>
 
-<section id="emotion-panel">
-    <h2>Live Emotion Scores</h2>
-    <div class="meters">
-        <div class="meter">
-            <span class="label">Confusion</span>
-            <div class="bar-track"><div class="bar-fill" id="barConfusion"></div></div>
-            <span class="value" id="valConfusion">0.00</span>
+    <section id="mic-panel" class="surface" data-panel="mic" data-panel-label="Microphone Activity" data-panel-default="hidden">
+        <h2>Microphone Activity</h2>
+        <div class="mic-activity">
+            <div class="meter">
+                <span class="label">Mic Level</span>
+                <div class="bar-track"><div class="bar-fill mic-level" id="micLevelBar"></div></div>
+                <span class="value" id="micLevelVal">0.0000</span>
+            </div>
+            <div class="mic-stats">
+                <span>Frames sent: <strong id="framesSent">0</strong></span>
+                <span id="speechIndicator" class="speech-indicator silent">Silent</span>
+            </div>
         </div>
-        <div class="meter">
-            <span class="label">Doubt</span>
-            <div class="bar-track"><div class="bar-fill" id="barDoubt"></div></div>
-            <span class="value" id="valDoubt">0.00</span>
-        </div>
-        <div class="meter">
-            <span class="label">Frustration</span>
-            <div class="bar-track"><div class="bar-fill" id="barFrustration"></div></div>
-            <span class="value" id="valFrustration">0.00</span>
-        </div>
-    </div>
-</section>
+    </section>
 
-<section id="strategy-panel">
-    <h2>Active Strategy</h2>
-    <div id="activeStrategy" class="strategy-badge">Baseline</div>
-    <pre id="activePrompt" class="prompt-display">No adaptation yet.</pre>
-</section>
+    <section id="meet-panel" class="surface" data-panel="meet" data-panel-label="Google Meet" data-panel-default="hidden">
+        <h2>Google Meet Integration</h2>
+        <div class="meet-controls">
+            <button id="btnMeetCapture" disabled>Capture Meet Audio</button>
+            <button id="btnMeetStop" disabled>Stop Capture</button>
+            <span id="meetStatus" class="meet-status inactive">Not connected</span>
+        </div>
+        <p class="meet-hint">Open Google Meet in another tab, click <strong>Capture Meet Audio</strong>, select the Meet tab, and check <strong>"Share tab audio"</strong>.</p>
+        <div class="meet-activity" id="meetActivity" style="display:none;">
+            <div class="meter">
+                <span class="label">Meet Audio</span>
+                <div class="bar-track"><div class="bar-fill meet-level" id="meetLevelBar"></div></div>
+                <span class="value" id="meetLevelVal">0.0000</span>
+            </div>
+            <div class="speaker-info">
+                <span>Active speaker:</span>
+                <span id="activeSpeakerIndicator" class="speaker-indicator local">Agent (You)</span>
+            </div>
+            <div class="speaker-list-wrap">
+                <span class="speaker-list-label">Detected participants:</span>
+                <div id="speakerList" class="speaker-list"><span class="spk-chip spk-local">Agent (You)</span></div>
+            </div>
+        </div>
+    </section>
 
-<section id="log-panel">
-    <h2>Event Log</h2>
-    <div id="eventLog" class="log-area"></div>
-</section>
+    <section id="log-panel" class="surface surface-wide" data-panel="log" data-panel-label="Event Log" data-panel-default="hidden">
+        <h2>Event Log</h2>
+        <div id="eventLog" class="log-area"></div>
+    </section>
+
+</div>
 
 @section Scripts {
-    <script src="~/js/site.js"></script>
+    <script type="module" src="~/js/app.js"></script>
 }

@@ -2,91 +2,81 @@
     ViewData["Title"] = "Analytics Dashboard";
 }
 
-<section id="dash-header">
-    <h2>📊 Call Emotion Analytics</h2>
-    <p class="dash-subtitle">Real-time emotion tracking for B2B / B2C call quality analysis</p>
-    <div class="dash-controls">
-        <button id="btnRefresh" onclick="loadEvents()">↻ Refresh</button>
-        <button id="btnExport" onclick="exportCSV()">⬇ Export CSV</button>
-        <span id="eventCount" class="dash-stat">0 events</span>
-    </div>
-</section>
+<div class="page-grid">
 
-<section id="dash-summary">
-    <h2>Session Summary</h2>
-    <div class="summary-cards">
-        <div class="card">
-            <span class="card-label">Total Turns</span>
-            <span class="card-value" id="sumTurns">0</span>
+    <section id="dash-header" class="surface surface-wide">
+        <h2>Call Emotion Analytics</h2>
+        <p class="dash-subtitle">Real-time emotion tracking for B2B / B2C call quality analysis</p>
+        <div class="dash-controls">
+            <button id="btnRefresh" onclick="loadEvents()">Refresh</button>
+            <button id="btnExport" onclick="exportCSV()">Export CSV</button>
+            <span id="eventCount" class="dash-stat">0 events</span>
         </div>
-        <div class="card">
-            <span class="card-label">Avg Confusion</span>
-            <span class="card-value" id="sumConfusion">0.00</span>
+    </section>
+
+    <section id="dash-summary" class="surface surface-wide" data-panel="summary" data-panel-default="visible">
+        <h2>Session Summary</h2>
+        <div class="summary-cards">
+            <div class="card">
+                <span class="card-label">Total Turns</span>
+                <span class="card-value" id="sumTurns">0</span>
+            </div>
+            <div class="card">
+                <span class="card-label">Avg Confusion</span>
+                <span class="card-value" id="sumConfusion">0.00</span>
+            </div>
+            <div class="card">
+                <span class="card-label">Avg Doubt</span>
+                <span class="card-value" id="sumDoubt">0.00</span>
+            </div>
+            <div class="card">
+                <span class="card-label">Avg Frustration</span>
+                <span class="card-value" id="sumFrustration">0.00</span>
+            </div>
+            <div class="card card-highlight">
+                <span class="card-label">Strategy Pivots</span>
+                <span class="card-value" id="sumPivots">0</span>
+            </div>
         </div>
-        <div class="card">
-            <span class="card-label">Avg Doubt</span>
-            <span class="card-value" id="sumDoubt">0.00</span>
+    </section>
+
+    <section id="dash-participants" class="surface surface-wide" data-panel="participants" data-panel-default="visible">
+        <h2>Participants</h2>
+        <div id="participantCards" class="participant-cards">
+            <p class="empty-state">No participants detected yet.</p>
         </div>
-        <div class="card">
-            <span class="card-label">Avg Frustration</span>
-            <span class="card-value" id="sumFrustration">0.00</span>
+    </section>
+
+    <section id="dash-timeline" class="surface" data-panel="timeline" data-panel-label="Emotion Timeline" data-panel-default="hidden">
+        <h2>Emotion Timeline</h2>
+        <div class="timeline-chart" id="timelineChart">
+            <p class="empty-state">Connect to a call on the <a href="/">Live Agent</a> page, then return here.</p>
         </div>
-        <div class="card card-highlight">
-            <span class="card-label">Strategy Pivots</span>
-            <span class="card-value" id="sumPivots">0</span>
+    </section>
+
+    <section id="dash-top-emotions" class="surface" data-panel="top-emotions" data-panel-label="Dominant Emotions" data-panel-default="hidden">
+        <h2>Dominant Emotions Across Session</h2>
+        <div class="emotion-bars" id="emotionBars">
+            <p class="empty-state">No data yet.</p>
         </div>
-    </div>
-</section>
+    </section>
 
-<section id="dash-participants">
-    <h2>Participants</h2>
-    <div id="participantCards" class="participant-cards">
-        <p class="empty-state">No participants detected yet.</p>
-    </div>
-</section>
+    <section id="dash-transcript" class="surface surface-wide" data-panel="transcript" data-panel-default="visible">
+        <h2>Transcript &amp; Emotion Log</h2>
+        <div id="transcriptFeed" class="transcript-feed">
+            <p class="empty-state">No data yet.</p>
+        </div>
+    </section>
 
-<section id="dash-timeline">
-    <h2>Emotion Timeline</h2>
-    <div class="timeline-chart" id="timelineChart">
-        <p class="empty-state">Connect to a call on the <a href="/">Live Agent</a> page, then return here.</p>
-    </div>
-</section>
+    <section id="dash-pivots" class="surface surface-wide" data-panel="pivots" data-panel-label="Self-Correction Log" data-panel-default="hidden">
+        <h2>Self-Correction Log</h2>
+        <p class="dash-subtitle">Every time the agent adapted its behavior based on detected emotions</p>
+        <div id="pivotLog" class="pivot-log">
+            <p class="empty-state">No strategy pivots recorded yet.</p>
+        </div>
+    </section>
 
-<section id="dash-top-emotions">
-    <h2>Dominant Emotions Across Session</h2>
-    <div class="emotion-bars" id="emotionBars">
-        <p class="empty-state">No data yet.</p>
-    </div>
-</section>
-
-<section id="dash-transcript">
-    <h2>Transcript &amp; Emotion Log</h2>
-    <div class="transcript-table-wrap">
-        <table class="transcript-table" id="transcriptTable">
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Speaker</th>
-                    <th>Transcript</th>
-                    <th>Top Emotion</th>
-                    <th>Confusion</th>
-                    <th>Doubt</th>
-                    <th>Frustration</th>
-                    <th>Strategy</th>
-                </tr>
-            </thead>
-            <tbody id="transcriptBody"></tbody>
-        </table>
-    </div>
-</section>
-
-<section id="dash-pivots">
-    <h2>Self-Correction Log</h2>
-    <p class="dash-subtitle">Every time the agent adapted its behavior based on detected emotions</p>
-    <div id="pivotLog" class="pivot-log">
-        <p class="empty-state">No strategy pivots recorded yet.</p>
-    </div>
-</section>
+</div>
 
 @section Scripts {
 <script>
@@ -124,8 +114,8 @@
         // Group events by speakerId
         const byId = {};
         events.forEach(e => {
-            const id = e.speakerId || (e.speaker === "remote" ? "remote-0" : "local");
-            const label = e.speakerLabel || (e.speaker === "remote" ? "Customer" : "Agent");
+            const id = e.speakerId || (e.speaker === "assistant" ? "assistant" : e.speaker === "remote" ? "remote-0" : "local");
+            const label = e.speakerLabel || (e.speaker === "assistant" ? "AI Assistant" : e.speaker === "remote" ? "Customer" : "Agent (You)");
             if (!byId[id]) byId[id] = { label, events: [] };
             byId[id].events.push(e);
         });
@@ -142,8 +132,8 @@
             data.events.forEach(e => { if (e.allEmotions) for (const [nm, sc] of Object.entries(e.allEmotions)) totals[nm] = (totals[nm] || 0) + sc; });
             const topEmo = Object.entries(totals).sort((a, b) => b[1] - a[1])[0];
             const topName = topEmo ? topEmo[0] : "—";
-            const color = id === "local" ? "#2ecc71" : spkColors[ci++ % spkColors.length];
-            const icon = id === "local" ? "🎤" : "🖥️";
+            const color = id === "local" ? "#2ecc71" : id === "assistant" ? "#3498db" : spkColors[ci++ % spkColors.length];
+            const icon = id === "assistant" ? "◆" : id === "local" ? "●" : "○";
             html += `<div class="participant-card" style="border-color:${color}">
                 <div class="pc-header"><span class="pc-icon" style="color:${color}">${icon}</span><span class="pc-name">${data.label}</span><span class="pc-turns">${n} turn${n !== 1 ? "s" : ""}</span></div>
                 <div class="pc-stats">
@@ -203,9 +193,9 @@
         let html = '';
         events.forEach(e => {
             const time = new Date(e.ts).toLocaleTimeString();
-            const icon = e.speaker === "remote" ? "🖥️" : "🎤";
-            const label = e.speakerLabel || (e.speaker === "remote" ? "Customer" : "Agent");
-            const spkClass = e.speaker === "remote" ? "spk-remote" : "spk-local";
+            const icon = e.speaker === "assistant" ? "◆" : e.speaker === "remote" ? "○" : "●";
+            const label = e.speakerLabel || (e.speaker === "assistant" ? "AI Assistant" : e.speaker === "remote" ? "Customer" : "Agent (You)");
+            const spkClass = e.speaker === "assistant" ? "spk-assistant" : e.speaker === "remote" ? "spk-remote" : "spk-local";
             const topEmo = e.top5?.[0]?.name ?? "—";
             const c = ((e.metrics?.confusion ?? 0) * 100).toFixed(1) + "%";
             const d = ((e.metrics?.doubt ?? 0) * 100).toFixed(1) + "%";
@@ -231,10 +221,10 @@
                 <span class="pivot-time">${time}</span>
                 <span class="strat-badge strat-${e.strategy.toLowerCase()}">${e.strategy}</span>
                 <span class="sev-badge sev-${sev}">${sev}</span>
-                <span class="pivot-speaker">${e.speaker === "remote" ? "🖥️" : "🎤"} ${e.speakerLabel || (e.speaker === "remote" ? "Customer" : "Agent")}</span>
+                ${e.speakerLabel || (e.speaker === "assistant" ? "AI Assistant" : e.speaker === "remote" ? "Customer" : "Agent (You)")}
                 <span class="pivot-transcript">"${e.transcript || "—"}"</span>
                 <span class="pivot-scores">C=${((e.metrics?.confusion ?? 0) * 100).toFixed(1)}% D=${((e.metrics?.doubt ?? 0) * 100).toFixed(1)}% F=${((e.metrics?.frustration ?? 0) * 100).toFixed(1)}%</span>
-                ${reason ? `<div class="pivot-reason">💡 ${reason}</div>` : ""}
+                ${reason ? `<div class="pivot-reason">${reason}</div>` : ""}
             </div>`;
         });
         container.innerHTML = html;
@@ -245,7 +235,7 @@
         const header = "Timestamp,Speaker,Transcript,TopEmotion,Confusion%,Doubt%,Frustration%,Strategy,Severity,Reasoning\n";
         const rows = events.map(e => {
             const top = e.top5?.[0]?.name ?? "";
-            const spk = e.speakerLabel || (e.speaker === "remote" ? "Customer" : "Agent");
+            const spk = e.speakerLabel || (e.speaker === "assistant" ? "AI Assistant" : e.speaker === "remote" ? "Customer" : "Agent (You)");
             const reason = (e.reasoning || "").replace(/"/g, '""');
             return `"${e.ts}","${spk}","${(e.transcript || "").replace(/"/g, '""')}","${top}",${((e.metrics?.confusion ?? 0) * 100).toFixed(1)},${((e.metrics?.doubt ?? 0) * 100).toFixed(1)},${((e.metrics?.frustration ?? 0) * 100).toFixed(1)},"${e.strategy}","${e.severity || "none"}","${reason}"`;
         }).join("\n");

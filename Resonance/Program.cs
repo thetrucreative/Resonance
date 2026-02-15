@@ -1,6 +1,9 @@
+using Resonance.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<PolicyEngine>();
 
 var app = builder.Build();
 

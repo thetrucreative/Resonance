@@ -10,6 +10,10 @@
 *.userosscache
 *.sln.docstates
 
+# Launch settings & publish profiles (contain local/hosting paths)
+Properties/launchSettings.json
+Properties/PublishProfiles/*.pubxml.user
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
