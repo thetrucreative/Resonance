@@ -390,3 +390,51 @@ section { margin-bottom: 0; }
 
 .empty-state { color: #445; font-style: italic; font-size: .95rem; padding: 1.5rem 0; text-align: center; }
 .empty-state a { color: #f0842a; }
+
+/* ══════════════════════════════════════════════════
+   ABOUT PAGE
+   ══════════════════════════════════════════════════ */
+
+.about-lead {
+    font-size: 1.05rem; color: #bbc; line-height: 1.7; max-width: 680px;
+}
+
+/* Steps (1-2-3-4 flow) */
+.about-steps { display: flex; flex-direction: column; gap: .75rem; }
+.about-step {
+    display: flex; gap: 1rem; align-items: flex-start;
+    padding: .75rem 1rem; background: #0d0f14; border-radius: 10px;
+}
+.about-step-num {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; flex-shrink: 0;
+    background: #f0842a; color: #0d0f14;
+    border-radius: 50%; font-weight: 700; font-size: .9rem;
+}
+.about-step strong { color: #e2e4e9; font-size: .95rem; }
+.about-step p { color: #99a; font-size: .88rem; margin-top: .15rem; line-height: 1.5; }
+
+/* Strategy list */
+.about-strategies { display: flex; flex-direction: column; gap: .5rem; }
+.about-strat {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .5rem .75rem; background: #0d0f14; border-radius: 8px;
+}
+.about-strat .strat-badge { flex-shrink: 0; }
+.about-strat p { color: #99a; font-size: .88rem; margin: 0; }
+
+/* Tech stack */
+.about-stack { display: flex; flex-direction: column; gap: .5rem; }
+.about-stack-item {
+    padding: .6rem .85rem; background: #0d0f14; border-radius: 8px;
+}
+.about-stack-item strong { color: #bbc; font-size: .92rem; }
+.about-stack-item p { color: #889; font-size: .85rem; margin-top: .15rem; }
+
+/* Footer */
+.about-footer { text-align: center; }
+.about-footer p { color: #889; font-size: .92rem; }
+.about-link {
+    color: #f0842a; text-decoration: none; font-weight: 600;
+}
+.about-link:hover { text-decoration: underline; }

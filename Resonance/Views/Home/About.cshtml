@@ -1,0 +1,104 @@
+@{
+    ViewData["Title"] = "About";
+}
+
+<div class="page-grid">
+
+    <section class="surface surface-wide">
+        <h2>About Resonance</h2>
+        <p class="about-lead">
+            Resonance is an adaptive AI conversational agent that detects emotional cues in real-time
+            and self-corrects its behavior to maintain productive dialogue.
+        </p>
+    </section>
+
+    <section class="surface surface-wide">
+        <h2>How It Works</h2>
+        <div class="about-steps">
+            <div class="about-step">
+                <span class="about-step-num">1</span>
+                <div>
+                    <strong>Listen</strong>
+                    <p>You speak into the microphone (or capture a Google Meet call). Hume EVI transcribes the audio and returns prosody scores across 48 emotions.</p>
+                </div>
+            </div>
+            <div class="about-step">
+                <span class="about-step-num">2</span>
+                <div>
+                    <strong>Analyze</strong>
+                    <p>The browser extracts confusion, doubt, and frustration metrics from each turn and sends them to the server-side Policy Engine.</p>
+                </div>
+            </div>
+            <div class="about-step">
+                <span class="about-step-num">3</span>
+                <div>
+                    <strong>Evaluate</strong>
+                    <p>The Policy Engine compares current scores against calibrated thresholds and tracks momentum across a rolling window of the last 10 turns.</p>
+                </div>
+            </div>
+            <div class="about-step">
+                <span class="about-step-num">4</span>
+                <div>
+                    <strong>Adapt</strong>
+                    <p>If distress is detected, a new conversational strategy and system prompt are injected into the AI in real-time. The next response reflects the adaptation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="surface">
+        <h2>Strategy Catalog</h2>
+        <div class="about-strategies">
+            <div class="about-strat">
+                <span class="strat-badge strat-baseline">Baseline</span>
+                <p>Standard empathetic assistant. No distress detected.</p>
+            </div>
+            <div class="about-strat">
+                <span class="strat-badge strat-simplification">Simplification</span>
+                <p>Shorter sentences, step-by-step guidance, plain language. Triggered by confusion.</p>
+            </div>
+            <div class="about-strat">
+                <span class="strat-badge strat-authority">Authority</span>
+                <p>Confident tone, evidence-backed, decisive responses. Triggered by doubt.</p>
+            </div>
+            <div class="about-strat">
+                <span class="strat-badge strat-de-escalation">De-escalation</span>
+                <p>Acknowledgment, calm pacing, solution-focused. Triggered by frustration.</p>
+            </div>
+            <div class="about-strat">
+                <span class="strat-badge strat-engagement">Engagement</span>
+                <p>Warm check-ins and open questions. Triggered by blended composite distress.</p>
+            </div>
+            <div class="about-strat">
+                <span class="strat-badge strat-proactive">Proactive</span>
+                <p>Pre-emptive clarification before distress peaks. Triggered by rising trend.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="surface">
+        <h2>Tech Stack</h2>
+        <div class="about-stack">
+            <div class="about-stack-item">
+                <strong>Backend</strong>
+                <p>ASP.NET Core MVC on .NET 10. Server-side Policy Engine with rolling momentum tracking.</p>
+            </div>
+            <div class="about-stack-item">
+                <strong>AI Voice</strong>
+                <p>Hume AI EVI v3 via WebSocket. Real-time prosody analysis across 48 emotion dimensions.</p>
+            </div>
+            <div class="about-stack-item">
+                <strong>Frontend</strong>
+                <p>Vanilla JavaScript (ES modules). Web Audio API for microphone and tab capture. CSS Grid card-based layout.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="surface surface-wide about-footer">
+        <p>Built for the <strong>Ruya AI Hackathon</strong>.</p>
+        <p>
+            <a href="https://github.com/thetrucreative/Resonance" class="about-link" target="_blank">View on GitHub</a>
+        </p>
+    </section>
+
+</div>

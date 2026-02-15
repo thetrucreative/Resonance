@@ -10,6 +10,9 @@
 *.userosscache
 *.sln.docstates
 
+# Visual Studio solution XML format (machine-generated, not needed in repo)
+*.slnx
+
 # Launch settings & publish profiles (contain local/hosting paths)
 Properties/launchSettings.json
 Properties/PublishProfiles/*.pubxml.user

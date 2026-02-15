@@ -11,6 +11,8 @@ public class HomeController(PolicyEngine policyEngine) : Controller
 
     public IActionResult Dashboard() => View();
 
+    public IActionResult About() => View();
+
     [HttpPost]
     public async Task<IActionResult> CreateConfig([FromBody] CreateConfigRequest request)
     {
